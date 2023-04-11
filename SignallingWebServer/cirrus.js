@@ -23,7 +23,7 @@ const defaultConfig = {
 	UseAuthentication: false,
 	LogToFile: true,
 	LogVerbose: true,
-	HomepageFile: 'player.html',
+	HomepageFile: 'sharespacebvh.html',
 	AdditionalRoutes: new Map(),
 	EnableWebserver: true,
 	MatchmakerAddress: "",
@@ -234,6 +234,7 @@ if(config.EnableWebserver) {
 	//Setup folders
 	app.use(express.static(path.join(__dirname, '/Public')))
 	app.use('/images', express.static(path.join(__dirname, './images')))
+	app.use('/bvh', express.static(path.join(__dirname, './bvh')))
 	app.use('/scripts', [isAuthenticated('/login'),express.static(path.join(__dirname, '/scripts'))]);
 	app.use('/', [isAuthenticated('/login'), express.static(path.join(__dirname, '/custom_html'))])
 }

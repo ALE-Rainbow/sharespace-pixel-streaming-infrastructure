@@ -30,7 +30,7 @@ if exist nexe\ (
 pushd ..\..
 
 @Rem Build cirrus.exe using `nexe` using node 14.5.0 (as that is one of the latest prebuilts node versions in the nexe repo)
-call platform_scripts\cmd\node\npx nexe cirrus.js --target "x64-14.15.3" -r "Public/*" -r "scripts/*" -r "images/*" -r "config.json"
+call platform_scripts\cmd\node\npx nexe cirrus.js --target "x64-14.15.3" -r "Public/*" -r "scripts/*" -r "images/*"  -r "bvh/*" -r "config.json"
 
 @Rem Pop cirrus directory.
 popd ..\..

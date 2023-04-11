@@ -2,6 +2,7 @@
 
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 const webpack = require('webpack');
 const fs = require('fs');
 
@@ -16,7 +17,13 @@ module.exports = {
 		return config;
 	}, {}),
 
-    plugins: [].concat(pages.map((page) => new HtmlWebpackPlugin({
+    plugins: [
+      new CopyWebpackPlugin({
+        patterns: [
+          { from: "src/assets/bvh", to: "bvh" },
+        ],
+      }),
+    ].concat(pages.map((page) => new HtmlWebpackPlugin({
           title: `${page}`,
           template: `./src/${page}.html`,
           filename: `${page}.html`,

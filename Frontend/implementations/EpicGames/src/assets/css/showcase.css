@@ -199,3 +199,18 @@ a[data-toggle="collapse"] {
 .characterBtn:active {
 	box-shadow: var(--democolor5) 0px 0px 0px 3px;
 }
+
+.custom-file-upload {
+	border: 1px solid #ccc;
+	display: inline-block;
+	padding: 6px 12px;
+	cursor: pointer;
+  }
+  
+  .custom-file-upload:hover {
+	background-color: #f7f7f7;
+  }
+  
+  input[type="file"] {
+	display: none;
+  }
