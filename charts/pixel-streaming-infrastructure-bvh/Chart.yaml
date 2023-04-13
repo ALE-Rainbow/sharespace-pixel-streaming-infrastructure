@@ -1,0 +1,17 @@
+apiVersion: v2
+appVersion: '1.0'
+name: pixel-streaming-infrastructure-sharespace
+description: Pixel Streaming Infrastructure for Sharespace chart
+version: 0.0.1
+keywords:
+  - Sharespace
+  - Unreal Engine
+  - Pixel Streaming
+sources:
+home:
+maintainers:
+  - email: vincent.bailleau@al-enterprise.com
+    name: Bailleau Vincent
+    url: bvh-sharespace.openrainbow.io
+
+dependencies: []

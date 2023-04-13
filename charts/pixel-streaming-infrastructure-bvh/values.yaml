@@ -1,0 +1,90 @@
+# Default values for pixelStreaming.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+  metrics:
+    enabled: false
+    path: '/metrics'
+
+# tenant: xxxx
+
+
+
+ingress:
+  enabled: true
+  # Used to create an Ingress record.
+  host:
+    name: dev-pixelstreaming.openrainbow.io
+    endpoints:
+      frontend:
+        path: "/"
+        serviceName: 'infra'
+        servicePort: 8080
+      streamer:
+        path: '/streamer'
+        serviceName: 'streamer'
+        servicePort: 8888
+  ws:
+    enabled: true
+
+  annotations: {}
+  # kubernetes.io/ingress.class: nginx
+  # kubernetes.io/tls-acme: "true"
+  tls: []
+  # Secrets must be manually created in the namespace.
+  # - secretName: chart-example-tls
+  #   hosts:
+  #     - distribution.domain.example
+
+infra:
+  name: 'registry.openrainbow.io/rainbow/sharespace/pixel-streaming-infrastruture-bvh-sample'
+  tag: 'latest-dev'
+  pullPolicy: Always
+  replicaCount: 1
+
+frontend:  
+  serviceName: 'frontend'
+  port: 80
+
+streamer:
+  port: 8888
+  serviceName: 'streamer'
+
+
+# images: Settings for the images
+images:
+  # pullPolicy to use when deploying images
+  pullPolicy: 'Always'
+  # imagePullSecrets which are required to pull images for private registries
+  imagePullSecrets: []
+
+# securityContext to use
+securityContext: ''
+#  # fsGroup to use (e.g. when deploying on Kubernetes)
+#  fsGroup: 0
+
+resources:
+  {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nameOverride: ''
+fullnameOverride: ''
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

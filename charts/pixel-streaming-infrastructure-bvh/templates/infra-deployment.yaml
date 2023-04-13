@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: {}
+  creationTimestamp: null
+  labels: 
+{{ include "pixelStreaming.labels" . | indent 4 }}
+  name: {{ .Release.Name }}-infra
+spec:
+  replicas: {{ default 1 .Values.infra.replicaCount }}
+  strategy: {}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "pixelStreaming.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.name: {{ .Template.Name | base }}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        {{- include "pixelStreaming.labels" . | nindent 8 }}
+      annotations: {}
+    spec:
+      {{ include "pixelStreaming.spec" . }}
+      initContainers:      
+      containers:
+        - name: infra
+          envFrom:
+            - configMapRef:
+                name: "{{ template "pixelStreaming.fullname" . }}-infra-env"
+          image: "{{ .Values.infra.name }}:{{ .Values.infra.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.infra.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.frontend.port | default 80 }}
+              protocol: TCP
+            - name: streamer
+              containerPort: {{ .Values.streamer.port | default 8888 }}
+              protocol: TCP
+          # livenessProbe:
+          #   initialDelaySeconds: 15
+          #   periodSeconds: 20
+          #   tcpSocket:
+          #     port: http
+          # readinessProbe:
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 10
+          #   tcpSocket:
+          #     port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}          
+          volumeMounts:
+          - name: cirrus-config
+            mountPath: /SignallingWebServer/config.json
+            subPath: config.json
+            readOnly: true
+
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      restartPolicy: Always
+      volumes:
+      - name: cirrus-config
+        configMap:
+          name: "{{ template "pixelStreaming.fullname" . }}-infra-env"
+          items:
+            - key: config.json
+              path: config.json
+
+status: {}

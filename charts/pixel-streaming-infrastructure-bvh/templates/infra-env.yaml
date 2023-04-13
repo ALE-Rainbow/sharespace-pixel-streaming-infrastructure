@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ template "pixelStreaming.fullname" . }}-infra-env"
+  labels:
+    app: {{ template "pixelStreaming.name" . }}
+    chart: {{ template "pixelStreaming.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  config.json: |
+    {
+      "UseFrontend": false,
+      "UseMatchmaker": false,
+      "UseHTTPS": false,
+      "UseAuthentication": false,
+      "LogToFile": false,
+      "LogVerbose": true,
+      "HomepageFile": "sharespacebvh.html",
+      "AdditionalRoutes": {},
+      "EnableWebserver": true,
+      "MatchmakerAddress": "",
+      "MatchmakerPort": 9999,
+      "PublicIp": "localhost",
+      "HttpPort": {{ .Values.frontend.port | default 80 }},
+      "HttpsPort": 443,
+      "StreamerPort": {{ .Values.streamer.port | default 8888 }},
+      "SFUPort": 8889,
+      "MaxPlayerCount": -1
+    }
