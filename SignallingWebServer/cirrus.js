@@ -540,6 +540,13 @@ streamerServer.on('connection', function (ws, req) {
 	logOutgoing("unknown", msg);
 	ws.send(JSON.stringify(msg));
 
+	setInterval(function() {
+		message = {
+			type: 'ping'
+		};
+		ws.send(JSON.stringify(message));
+	}, 30 * 1000);
+
 	registerStreamer(LegacyStreamerId, streamer);
 });
 
@@ -669,6 +676,19 @@ function onPlayerMessageUnsubscribe(player, msg) {
 	player.unsubscribe();
 }
 
+function onPlayerMessagePing(player, msg) {
+	logIncoming(player.id, msg);
+
+	const pongMsg = JSON.stringify({ type: "pong", time: msg.time});
+	player.ws.send(pongMsg);
+}
+
+function onPlayerMessagePong(player, msg) {
+	logIncoming(player.id, msg);
+
+	// Nothing to do
+}
+
 function onPlayerMessageStats(player, msg) {
 	console.log(`player ${playerId}: stats\n${msg.data}`);
 }
@@ -702,6 +722,8 @@ function onPlayerDisconnected(playerId) {
 
 playerMessageHandlers.set('subscribe', onPlayerMessageSubscribe);
 playerMessageHandlers.set('unsubscribe', onPlayerMessageUnsubscribe);
+playerMessageHandlers.set('ping', onPlayerMessagePing);
+playerMessageHandlers.set('pong', onPlayerMessagePong);
 playerMessageHandlers.set('stats', onPlayerMessageStats);
 playerMessageHandlers.set('offer', forwardPlayerMessage);
 playerMessageHandlers.set('answer', forwardPlayerMessage);
@@ -779,6 +801,13 @@ playerServer.on('connection', function (ws, req) {
 	sendPlayerConnectedToMatchmaker();
 	player.ws.send(JSON.stringify(clientConfig));
 	sendPlayersCount();
+
+	setInterval(function() {
+		message = {
+			type: 'ping'
+		};
+		ws.send(JSON.stringify(message));
+	}, 30 * 1000);
 });
 
 function disconnectAllPlayers(streamerId) {
