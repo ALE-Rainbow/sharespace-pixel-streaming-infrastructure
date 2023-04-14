@@ -24,9 +24,9 @@ spec:
 {{- end }}
   rules:
     {{- with .Values.ingress.host }}
-    # - host: {{ .name | quote }}
-    #   http:
-    #     paths:
+    - host: {{ .name | quote }}
+      http:
+      paths: []
     #     {{- range .endpoints }}
     #       {{- $serviceName := default $fullName .serviceName -}}
     #       {{- $servicePort := default (print "http") .servicePort -}}          
