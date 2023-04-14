@@ -98,3 +98,16 @@ Set the final MongoDB connection URL
 {{- printf "%s://%s:%s@%s%s/%s%s" $mongoScheme $mongoUser $mongoPassword $mongoHost $mongoPort $mongoDatabase $mongoParams | quote -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "getServiceNameReplicaCount" -}}
+{{- $serviceName :=  .serviceName -}}
+{{- range $key, $val := .global }}
+    {{- if typeIs "map[string]interface {}" $val }} 
+        {{- if len $val }}
+            {{- if (eq ($val.serviceName | default "") $serviceName) }}
+                {{- $val.replicaCount | default 1 -}}
+            {{- end}}
+        {{- end}}
+    {{- end}}        
+{{- end -}}     
+
