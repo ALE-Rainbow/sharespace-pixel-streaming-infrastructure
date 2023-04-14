@@ -21,11 +21,11 @@ ingress:
     name: dev-pixelstreaming.openrainbow.io
     endpoints:
       frontend:
-        path: "/"
+        paths: ["/"]
         serviceName: 'infra'
         servicePort: 8080
       streamer:
-        path: '/streamer'
+        paths: ["/streamer"]
         serviceName: 'streamer'
         servicePort: 8888
   ws:
