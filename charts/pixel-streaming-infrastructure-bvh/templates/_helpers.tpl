@@ -109,5 +109,6 @@ Set the final MongoDB connection URL
             {{- end}}
         {{- end}}
     {{- end}}        
+{{- end -}}
 {{- end -}}     
 
