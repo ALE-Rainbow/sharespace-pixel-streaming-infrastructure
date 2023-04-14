@@ -24,36 +24,36 @@ spec:
 {{- end }}
   rules:
     {{- with .Values.ingress.host }}
-    - host: {{ .name | quote }}
-      http:
-        paths:
-        {{- range .endpoints }}
-          {{- $serviceName := default $fullName .serviceName -}}
-          {{- $servicePort := default (print "http") .servicePort -}}          
-          {{- range .paths }}
-            {{- if not (contains "@" .) }}
-            - path: {{ . }}
-              pathType: Prefix
-              backend:
-                service:
-                  name: '{{ $.Release.Name }}-{{ $serviceName }}'
-                  port:
-                    number: {{ $servicePort }}
-            {{- else }}
-              {{- $path := . -}}
-              {{- $replicaCount := include "getServiceNameReplicaCount" (dict "global" $.Values "serviceName" $serviceName ) -}}
-              {{- range $count, $e := until ($replicaCount|int) }}
-            - path: {{ $path | replace "@" ( . | toString ) }}
-              pathType: Prefix
-              backend:
-                service:
-                  name: "{{ $.Release.Name }}-{{ $serviceName }}-{{ . }}"
-                  port:
-                    number: {{ $servicePort }}                   
-              {{- end }} 
-            {{- end }}  
-          {{- end }}
-        {{- end }}
+    # - host: {{ .name | quote }}
+    #   http:
+    #     paths:
+    #     {{- range .endpoints }}
+    #       {{- $serviceName := default $fullName .serviceName -}}
+    #       {{- $servicePort := default (print "http") .servicePort -}}          
+    #       {{- range .paths }}
+    #         {{- if not (contains "@" .) }}
+    #         - path: {{ . }}
+    #           pathType: Prefix
+    #           backend:
+    #             service:
+    #               name: '{{ $.Release.Name }}-{{ $serviceName }}'
+    #               port:
+    #                 number: {{ $servicePort }}
+    #         {{- else }}
+    #           {{- $path := . -}}
+    #           {{- $replicaCount := include "getServiceNameReplicaCount" (dict "global" $.Values "serviceName" $serviceName ) -}}
+    #           {{- range $count, $e := until ($replicaCount|int) }}
+    #         - path: {{ $path | replace "@" ( . | toString ) }}
+    #           pathType: Prefix
+    #           backend:
+    #             service:
+    #               name: "{{ $.Release.Name }}-{{ $serviceName }}-{{ . }}"
+    #               port:
+    #                 number: {{ $servicePort }}                   
+    #           {{- end }} 
+    #         {{- end }}  
+    #       {{- end }}
+    #     {{- end }}
   {{- end }}
 ---
 {{- end }}
