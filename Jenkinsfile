@@ -1,6 +1,6 @@
 @Library('rainbow-shared-library') _
 buildAndPushDockerImage(
-    registry: 'rainbow/sharespace/pixel-streaming-infrastruture-bvh-sample',
+    registry: 'rainbow/sharespace/pixel-streaming-infrastructure-bvh-sample',
     withHelm: true,
     dockerFilePath: 'SignallingWebServer',
     projectPath: 'SignallingWebServer',

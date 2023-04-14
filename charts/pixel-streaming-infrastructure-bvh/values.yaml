@@ -41,7 +41,7 @@ ingress:
   #     - distribution.domain.example
 
 infra:
-  name: 'registry.openrainbow.io/rainbow/sharespace/pixel-streaming-infrastruture-bvh-sample'
+  name: 'registry.openrainbow.io/rainbow/sharespace/pixel-streaming-infrastructure-bvh-sample'
   tag: 'latest-dev'
   pullPolicy: Always
   replicaCount: 1
