@@ -26,7 +26,7 @@ spec:
     {{- with .Values.ingress.host }}
     - host: {{ .name | quote }}
       http:
-      paths: []
+        paths: []
     #     {{- range .endpoints }}
     #       {{- $serviceName := default $fullName .serviceName -}}
     #       {{- $servicePort := default (print "http") .servicePort -}}          
