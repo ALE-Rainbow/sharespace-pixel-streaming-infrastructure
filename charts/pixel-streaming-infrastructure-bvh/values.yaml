@@ -23,7 +23,7 @@ ingress:
       frontend:
         paths: ["/"]
         serviceName: 'infra'
-        servicePort: 8080
+        servicePort: 80
       streamer:
         paths: ["/streamer"]
         serviceName: 'streamer'
