@@ -16,6 +16,10 @@ spec:
       port: {{ .Values.streamer.port | default 8888 }}
       targetPort: {{ .Values.streamer.port | default 8888 }}
       protocol: TCP
+    - name: "8889"
+      port: {{ .Values.sfu.port | default 8889 }}
+      targetPort: {{ .Values.sfu.port | default 8889 }}
+      protocol: TCP
   selector:
     app.kubernetes.io/name: {{ include "pixelStreaming.name" . }}
     app.name: "infra-deployment.yaml"
