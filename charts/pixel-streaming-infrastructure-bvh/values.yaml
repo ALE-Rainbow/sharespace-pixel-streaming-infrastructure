@@ -28,6 +28,10 @@ ingress:
         paths: ["/streamer"]
         serviceName: 'infra'
         servicePort: 8888
+      sfu:
+        paths: ["/sfu"]
+        serviceName: 'infra'
+        servicePort: 8889
   ws:
     enabled: true
 
