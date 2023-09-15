@@ -58,6 +58,10 @@ streamer:
   port: 8888
   serviceName: 'streamer'
 
+sfu:
+  port: 8889
+  serviceName: 'sfu'
+
 
 # images: Settings for the images
 images:
