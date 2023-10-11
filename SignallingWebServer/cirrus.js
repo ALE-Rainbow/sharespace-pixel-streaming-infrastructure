@@ -593,10 +593,19 @@ function onSFUDisconnected() {
 	streamers.delete(SFUPlayerId);
 }
 
+function onSFUMessagePing(sfu, msg) {
+	logIncoming(sfu.id, msg);
+
+	const pongMsg = JSON.stringify({ type: "pong", time: msg.time});
+
+	sfu.ws.send(pongMsg);
+}
+
 sfuMessageHandlers.set('offer', forwardSFUMessageToPlayer);
 sfuMessageHandlers.set('answer', forwardSFUMessageToStreamer);
 sfuMessageHandlers.set('streamerDataChannels', forwardSFUMessageToStreamer);
 sfuMessageHandlers.set('peerDataChannels', onPeerDataChannelsSFUMessage);
+sfuMessageHandlers.set('ping', onSFUMessagePing);
 
 console.logColor(logging.Green, `WebSocket listening for SFU connections on :${sfuPort}`);
 let sfuServer = new WebSocket.Server({ port: sfuPort });
@@ -626,7 +635,7 @@ sfuServer.on('connection', function (ws, req) {
 			ws.close(1008, 'Unsupported message type');
 			return;
 		}
-		handler(msg);
+		handler(sfuServer, msg);
 	});
 
 	ws.on('close', function(code, reason) {
