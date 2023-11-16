@@ -26,10 +26,23 @@ import {
     WebRtcDisconnectedEvent,
     WebRtcFailedEvent,
     WebRtcSdpEvent,
+    DataChannelLatencyTestResponseEvent,
+    DataChannelLatencyTestResultEvent,
     PlayerCountEvent
 } from '../Util/EventEmitter';
 import { MessageOnScreenKeyboard } from '../WebSockets/MessageReceive';
 import { WebXRController } from '../WebXR/WebXRController';
+import { MessageDirection } from '../UeInstanceMessage/StreamMessageController';
+import {
+    DataChannelLatencyTestConfig,
+    DataChannelLatencyTestController
+} from "../DataChannel/DataChannelLatencyTestController";
+import {
+    DataChannelLatencyTestResponse,
+    DataChannelLatencyTestResult
+} from "../DataChannel/DataChannelLatencyTestResults";
+import { RTCUtils } from '../Util/RTCUtils';
+
 
 export interface PixelStreamingOverrides {
     /** The DOM elment where Pixel Streaming video and user input event handlers are attached to.
@@ -48,6 +61,7 @@ export interface PixelStreamingOverrides {
 export class PixelStreaming {
     protected _webRtcController: WebRtcPlayerController;
     protected _webXrController: WebXRController;
+    protected _dataChannelLatencyTestController: DataChannelLatencyTestController;
     /**
      * Configuration object. You can read or modify config through this object. Whenever
      * the configuration is changed, the library will emit a `settingsChanged` event.
@@ -56,7 +70,6 @@ export class PixelStreaming {
 
     private _videoElementParent: HTMLElement;
 
-    _showActionOrErrorOnDisconnect = true;
     private allowConsoleCommands = false;
 
     private onScreenKeyboardHelper: OnScreenKeyboard;
@@ -339,7 +352,7 @@ export class PixelStreaming {
      */
     public reconnect() {
         this._eventEmitter.dispatchEvent(new StreamReconnectEvent());
-        this._webRtcController.restartStreamAutomatically();
+        this._webRtcController.tryReconnect("Reconnecting...");
     }
 
     /**
@@ -370,12 +383,62 @@ export class PixelStreaming {
         }
     }
 
+    /** 
+     * Will unmute the microphone track which is sent to Unreal Engine.
+     * By default, will only unmute an existing mic track.
+     * 
+     * @param forceEnable Can be used for cases when this object wasn't initialized with a mic track.
+     * If this parameter is true, the connection will be restarted with a microphone.
+     * Warning: this takes some time, as a full renegotiation and reconnection will happen.
+     */
+    public unmuteMicrophone(forceEnable = false) : void {
+        // If there's an existing mic track, we just set muted state
+        if (this.config.isFlagEnabled('UseMic')) {
+            this.setMicrophoneMuted(false);
+            return;
+        }
+        
+        // If there's no pre-existing mic track, and caller is ok with full reset, we enable and reset
+        if (forceEnable) {
+            this.config.setFlagEnabled("UseMic", true);
+            this.reconnect();
+            return;
+        }
+          
+        // If we prefer not to force a reconnection, just warn the user that this operation didn't happen
+        Logger.Warning(
+            Logger.GetStackTrace(),
+            'Trying to unmute mic, but PixelStreaming was initialized with no microphone track. Call with forceEnable == true to re-connect with a mic track.'
+        );
+    }
+
+    public muteMicrophone() : void {
+        if (this.config.isFlagEnabled('UseMic')) {
+            this.setMicrophoneMuted(true);
+            return;
+        }
+
+        // If there wasn't a mic track, just let user know there's nothing to mute
+        Logger.Info(
+            Logger.GetStackTrace(),
+            'Trying to mute mic, but PixelStreaming has no microphone track, so sending sound is already disabled.'
+        );
+    }
+
+    private setMicrophoneMuted(mute: boolean) : void
+    {
+        for (const transceiver of this._webRtcController?.peerConnectionController?.peerConnection?.getTransceivers() ?? []) {
+            if (RTCUtils.canTransceiverSendAudio(transceiver)) {
+                transceiver.sender.track.enabled = !mute;
+            }
+        }
+    }
+
     /**
      * Emit an event on auto connecting
      */
     _onWebRtcAutoConnect() {
         this._eventEmitter.dispatchEvent(new WebRtcAutoConnectEvent());
-        this._showActionOrErrorOnDisconnect = true;
     }
 
     /**
@@ -395,30 +458,16 @@ export class PixelStreaming {
     /**
      * Event fired when the video is disconnected - emits given eventString or an override
      * message from webRtcController if one has been set
-     * @param eventString - the event text that will be emitted
+     * @param eventString - a string describing why the connection closed
+     * @param allowClickToReconnect - true if we want to allow the user to retry the connection with a click
      */
-    _onDisconnect(eventString: string) {
-        // if we have overridden the default disconnection message, assign the new value here
-        if (
-            this._webRtcController.getDisconnectMessageOverride() != '' &&
-            this._webRtcController.getDisconnectMessageOverride() !==
-                undefined &&
-            this._webRtcController.getDisconnectMessageOverride() != null
-        ) {
-            eventString = this._webRtcController.getDisconnectMessageOverride();
-            this._webRtcController.setDisconnectMessageOverride('');
-        }
-
+    _onDisconnect(eventString: string, allowClickToReconnect: boolean) {
         this._eventEmitter.dispatchEvent(
             new WebRtcDisconnectedEvent({
-                eventString,
-                showActionOrErrorOnDisconnect:
-                    this._showActionOrErrorOnDisconnect
+                eventString: eventString,
+                allowClickToReconnect: allowClickToReconnect
             })
         );
-        if (this._showActionOrErrorOnDisconnect == false) {
-            this._showActionOrErrorOnDisconnect = true;
-        }
     }
 
     /**
@@ -457,6 +506,12 @@ export class PixelStreaming {
     _onLatencyTestResult(latencyTimings: LatencyTestResults) {
         this._eventEmitter.dispatchEvent(
             new LatencyTestResultEvent({ latencyTimings })
+        );
+    }
+
+    _onDataChannelLatencyTestResponse(response: DataChannelLatencyTestResponse) {
+        this._eventEmitter.dispatchEvent(
+            new DataChannelLatencyTestResponseEvent({ response })
         );
     }
 
@@ -532,13 +587,13 @@ export class PixelStreaming {
             this.config.setNumericSetting(
                 NumericParameters.WebRTCMinBitrate,
                 (useUrlParams && urlParams.has(NumericParameters.WebRTCMinBitrate)) 
-                    ? Number.parseInt(urlParams.get(NumericParameters.WebRTCMinBitrate)) / 1000 /* bps to kbps */
+                    ? Number.parseInt(urlParams.get(NumericParameters.WebRTCMinBitrate))
                     : settings.WebRTCSettings.MinBitrate / 1000 /* bps to kbps */
             );
             this.config.setNumericSetting(
                 NumericParameters.WebRTCMaxBitrate,
                 (useUrlParams && urlParams.has(NumericParameters.WebRTCMaxBitrate)) 
-                    ? Number.parseInt(urlParams.get(NumericParameters.WebRTCMaxBitrate)) / 1000 /* bps to kbps */
+                    ? Number.parseInt(urlParams.get(NumericParameters.WebRTCMaxBitrate))
                     : settings.WebRTCSettings.MaxBitrate / 1000 /* bps to kbps */
                 
             );
@@ -579,6 +634,30 @@ export class PixelStreaming {
         }
         this._webRtcController.sendLatencyTest();
         return true;
+    }
+
+    /**
+     * Request a data channel latency test.
+     * NOTE: There are plans to refactor all request* functions. Expect changes if you use this!
+     */
+    public requestDataChannelLatencyTest(config: DataChannelLatencyTestConfig) {
+        if (!this._webRtcController.videoPlayer.isVideoReady()) {
+            return false;
+        }
+        if (!this._dataChannelLatencyTestController) {
+            this._dataChannelLatencyTestController = new DataChannelLatencyTestController(
+                this._webRtcController.sendDataChannelLatencyTest.bind(this._webRtcController),
+                (result: DataChannelLatencyTestResult) => {
+                    this._eventEmitter.dispatchEvent(new DataChannelLatencyTestResultEvent( { result }))
+                });
+            this.addEventListener(
+                "dataChannelLatencyTestResponse",
+                ({data: {response} }) => {
+                    this._dataChannelLatencyTestController.receive(response);
+                }
+            )
+        }
+        return this._dataChannelLatencyTestController.start(config);
     }
 
     /**
@@ -731,5 +810,38 @@ export class PixelStreaming {
      */
     public get webXrController() {
         return this._webXrController;
+    }
+
+    public registerMessageHandler(name: string, direction: MessageDirection, handler?: (data: ArrayBuffer | Array<number | string>) => void) {
+        if(direction === MessageDirection.FromStreamer && typeof handler === 'undefined') {
+            Logger.Warning(Logger.GetStackTrace(), `Unable to register an undefined handler for ${name}`)
+            return;
+        }
+
+        if(direction === MessageDirection.ToStreamer && typeof handler === 'undefined') {
+            this._webRtcController.streamMessageController.registerMessageHandler(
+                direction,
+                name,
+                (data: Array<number | string>) =>
+                this._webRtcController.sendMessageController.sendMessageToStreamer(
+                    name,
+                    data
+                )
+            );
+        } else {
+            this._webRtcController.streamMessageController.registerMessageHandler(
+                direction,
+                name,
+                (data: ArrayBuffer) => handler(data)
+            );
+        }
+    }
+
+    public get toStreamerHandlers() {
+        return this._webRtcController.streamMessageController.toStreamerHandlers;
+    }
+
+    public isReconnecting() {
+        return this._webRtcController.isReconnecting;
     }
 }

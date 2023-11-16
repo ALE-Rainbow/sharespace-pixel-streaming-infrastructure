@@ -23,7 +23,6 @@ export class Flags {
     static FakeMouseWithTouches = 'FakeMouseWithTouches' as const;
     static IsQualityController = 'ControlsQuality' as const;
     static MatchViewportResolution = 'MatchViewportRes' as const;
-    static PreferSFU = 'preferSFU' as const;
     static StartVideoMuted = 'StartVideoMuted' as const;
     static SuppressBrowserKeys = 'SuppressBrowserKeys' as const;
     static UseMic = 'UseMic' as const;
@@ -32,6 +31,7 @@ export class Flags {
     static TouchInput = 'TouchInput' as const;
     static GamepadInput = 'GamepadInput' as const;
     static XRControllerInput = 'XRControllerInput' as const;
+    static WaitForStreamer = "WaitForStreamer" as const;
 }
 
 export type FlagsKeys = Exclude<keyof typeof Flags, 'prototype'>;
@@ -54,6 +54,7 @@ export class NumericParameters {
     static WebRTCMinBitrate = 'WebRTCMinBitrate' as const;
     static WebRTCMaxBitrate = 'WebRTCMaxBitrate' as const;
     static MaxReconnectAttempts = 'MaxReconnectAttempts' as const;
+    static StreamerAutoJoinInterval = 'StreamerAutoJoinInterval' as const;
 }
 
 export type NumericParametersKeys = Exclude<
@@ -314,17 +315,6 @@ export class Config {
         );
 
         this.flags.set(
-            Flags.PreferSFU,
-            new SettingFlag(
-                Flags.PreferSFU,
-                'Prefer SFU',
-                'Try to connect to the SFU instead of P2P.',
-                false,
-                useUrlParams
-            )
-        );
-
-        this.flags.set(
             Flags.IsQualityController,
             new SettingFlag(
                 Flags.IsQualityController,
@@ -459,6 +449,17 @@ export class Config {
             )
         );
 
+        this.flags.set(
+            Flags.WaitForStreamer,
+            new SettingFlag(
+                Flags.WaitForStreamer,
+                'Wait for streamer',
+                'Will continue trying to connect to the first streamer available.',
+                true,
+                useUrlParams
+            )
+        );
+
         /**
          * Numeric parameters
          */
@@ -550,6 +551,19 @@ export class Config {
                 0 /*min*/,
                 500000 /*max*/,
                 0 /*value*/,
+                useUrlParams
+            )
+        );
+
+        this.numericParameters.set(
+            NumericParameters.StreamerAutoJoinInterval,
+            new SettingNumber(
+                NumericParameters.StreamerAutoJoinInterval,
+                'Streamer Auto Join Interval (ms)',
+                'Delay between retries when waiting for an available streamer.',
+                500 /*min*/,
+                900000 /*max*/,
+                3000 /*value*/,
                 useUrlParams
             )
         );

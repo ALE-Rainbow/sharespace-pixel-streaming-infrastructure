@@ -31,6 +31,9 @@ import {
     UIElementConfig
 } from '../UI/UIConfigurationTypes'
 import { FullScreenIconBase, FullScreenIconExternal } from '../UI/FullscreenIcon';
+import {
+    DataChannelLatencyTestResult
+} from "@epicgames-ps/lib-pixelstreamingfrontend-ue5.3/types/DataChannel/DataChannelLatencyTestResults";
 
 
 /** 
@@ -195,7 +198,7 @@ export class Application {
             // Or use the one created by the Controls initializer earlier
             : controls.fullscreenIcon;
         if (fullScreenButton) {
-            fullScreenButton.fullscreenElement = /iPhone|iPod/.test(navigator.userAgent) ? this.stream.videoElementParent.getElementsByTagName("video")[0] : this.rootElement;
+            fullScreenButton.fullscreenElement = /iPad|iPhone|iPod/.test(navigator.userAgent) ? this.stream.videoElementParent.getElementsByTagName("video")[0] : this.rootElement;
         }
 
         // Add settings button to controls
@@ -321,8 +324,8 @@ export class Application {
         );
         this.stream.addEventListener(
             'webRtcDisconnected',
-            ({ data: { eventString, showActionOrErrorOnDisconnect } }) =>
-                this.onDisconnect(eventString, showActionOrErrorOnDisconnect)
+            ({ data: { eventString, allowClickToReconnect } }) =>
+                this.onDisconnect(eventString, allowClickToReconnect)
         );
         this.stream.addEventListener('videoInitialized', () =>
             this.onVideoInitialized()
@@ -357,9 +360,14 @@ export class Application {
                 this.onLatencyTestResults(latencyTimings)
         );
         this.stream.addEventListener(
+            'dataChannelLatencyTestResult',
+            ({data: { result } }) =>
+                this.onDataChannelLatencyTestResults(result)
+        )
+        this.stream.addEventListener(
             'streamerListMessage',
-            ({ data: { messageStreamerList, autoSelectedStreamerId } }) =>
-                this.handleStreamerListMessage(messageStreamerList, autoSelectedStreamerId)
+            ({ data: { messageStreamerList, autoSelectedStreamerId, wantedStreamerId } }) =>
+                this.handleStreamerListMessage(messageStreamerList, autoSelectedStreamerId, wantedStreamerId)
         );
         this.stream.addEventListener(
             'settingsChanged',
@@ -479,7 +487,7 @@ export class Application {
      * Shows or hides the settings panel if clicked
      */
     settingsClicked() {
-        this.statsPanel.hide();
+        this.statsPanel?.hide();
         this.settingsPanel.toggleVisibility();
     }
 
@@ -487,7 +495,7 @@ export class Application {
      * Shows or hides the stats panel if clicked
      */
     statsClicked() {
-        this.settingsPanel.hide();
+        this.settingsPanel?.hide();
         this.statsPanel.toggleVisibility();
     }
 
@@ -565,19 +573,17 @@ export class Application {
     /**
      * Event fired when the video is disconnected - displays the error overlay and resets the buttons stream tools upon disconnect
      * @param eventString - the event text that will be shown in the overlay
+     * @param allowClickToReconnect - true if we want to allow the user to click to reconnect. Otherwise it's just a message.
      */
-    onDisconnect(eventString: string, showActionOrErrorOnDisconnect: boolean) {
-        if (showActionOrErrorOnDisconnect == false) {
-            this.showErrorOverlay(`Disconnected: ${eventString}`);
+    onDisconnect(eventString: string, allowClickToReconnect: boolean) {
+        const overlayMessage = 'Disconnected' + (eventString ? `: ${eventString}` : '');
+        if (allowClickToReconnect) {
+            this.showDisconnectOverlay(`${overlayMessage} Click To Restart.`);
         } else {
-            this.showDisconnectOverlay(
-                `Disconnected: ${eventString}  <div class="clickableState">Click To Restart</div>`
-            );
+            this.showErrorOverlay(overlayMessage);
         }
-        // disable starting a latency check
-        this.statsPanel.latencyTest.latencyTestButton.onclick = () => {
-            // do nothing
-        };
+        // disable starting a latency checks
+        this.statsPanel?.onDisconnect();
     }
 
     /**
@@ -624,11 +630,7 @@ export class Application {
         if (!this.stream.config.isFlagEnabled(Flags.AutoPlayVideo)) {
             this.showPlayOverlay();
         }
-
-        // starting a latency check
-        this.statsPanel.latencyTest.latencyTestButton.onclick = () => {
-            this.stream.requestLatencyTest();
-        };
+        this.statsPanel?.onVideoInitialized(this.stream);
     }
 
     /**
@@ -644,43 +646,62 @@ export class Application {
 
     onInitialSettings(settings: InitialSettings) {
         if (settings.PixelStreamingSettings) {
-            const disableLatencyTest =
-                settings.PixelStreamingSettings.DisableLatencyTest;
-            if (disableLatencyTest) {
-                this.statsPanel.latencyTest.latencyTestButton.disabled = true;
-                this.statsPanel.latencyTest.latencyTestButton.title =
-                    'Disabled by -PixelStreamingDisableLatencyTester=true';
-                Logger.Info(
-                    Logger.GetStackTrace(),
-                    '-PixelStreamingDisableLatencyTester=true, requesting latency report from the the browser to UE is disabled.'
-                );
-            }
+            this.statsPanel?.configure(settings.PixelStreamingSettings);
         }
     }
 
     onStatsReceived(aggregatedStats: AggregatedStats) {
         // Grab all stats we can off the aggregated stats
-        this.statsPanel.handleStats(aggregatedStats);
+        this.statsPanel?.handleStats(aggregatedStats);
     }
 
     onLatencyTestResults(latencyTimings: LatencyTestResults) {
-        this.statsPanel.latencyTest.handleTestResult(latencyTimings);
+        this.statsPanel?.latencyTest.handleTestResult(latencyTimings);
+    }
+
+    onDataChannelLatencyTestResults(result: DataChannelLatencyTestResult) {
+        this.statsPanel?.dataChannelLatencyTest.handleTestResult(result);
     }
 
     onPlayerCount(playerCount: number) {
-        this.statsPanel.handlePlayerCount(playerCount);
+        this.statsPanel?.handlePlayerCount(playerCount);
     }
 
-    handleStreamerListMessage(messageStreamingList: MessageStreamerList, autoSelectedStreamerId: string | null) {
-        if (autoSelectedStreamerId === null) {
-            if(messageStreamingList.ids.length === 0) {
-                this.showDisconnectOverlay(
-                    'No streamers connected. <div class="clickableState">Click To Restart</div>'
-                );
+    handleStreamerListMessage(messageStreamingList: MessageStreamerList, autoSelectedStreamerId: string, wantedStreamerId: string) {
+        const waitForStreamer = this.stream.config.isFlagEnabled(Flags.WaitForStreamer);
+        const isReconnecting = this.stream.isReconnecting();
+        let message: string = null;
+        let allowRestart: boolean = true;
+
+        if (!autoSelectedStreamerId) {
+            if (waitForStreamer && wantedStreamerId) {
+                if (isReconnecting) {
+                    message = `Waiting for ${wantedStreamerId} to become available.`;
+                    allowRestart = false;
+                } else {
+                    message = `Gave up waiting for ${wantedStreamerId} to become available. Click to try again`;
+                    if (messageStreamingList.ids.length > 0) {
+                        message += ` or select a streamer from the settings menu.`;
+                    }
+                    allowRestart = true;
+                }
+            } else if (messageStreamingList.ids.length == 0) {
+                if (isReconnecting) {
+                    message = `Waiting for a streamer to become available.`;
+                    allowRestart = false;
+                } else {
+                    message = `No streamers available. Click to try again.`;
+                    allowRestart = true;
+                }
             } else {
-                this.showTextOverlay(
-                    'Multiple streamers detected. Use the dropdown in the settings menu to select the streamer'
-                );
+                message = `Multiple streamers available. Select one from the settings menu.`;
+                allowRestart = false;
+            }
+
+            if (allowRestart) {
+                this.showDisconnectOverlay(message);
+            } else {
+                this.showTextOverlay(message);
             }
         }
     }
