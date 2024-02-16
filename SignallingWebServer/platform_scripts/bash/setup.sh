@@ -141,8 +141,15 @@ if [ "$(uname)" == "Darwin" ]; then
 		echo 'Incompatible architecture. Only x86_64 and ARM64 are supported'
 		exit -1
 	fi
-else
-	node_url="https://nodejs.org/dist/$NODE_VERSION/node-$NODE_VERSION-linux-x64.tar.gz"
+elif [ "$(uname)" == "Linux" ]; then
+	arch=$(uname -m)
+	if [[ $arch == x86_64* ]]; then
+		node_url="https://nodejs.org/dist/$NODE_VERSION/node-$NODE_VERSION-linux-x64.tar.gz"
+	elif  [[ $arch == aarch64 ]]; then
+	    node_url="https://nodejs.org/dist/$NODE_VERSION/node-$NODE_VERSION-linux-arm64.tar.gz"
+	else
+		echo 'Incompatible architecture. Only x86_64 and ARM64 are supported'
+		exit -1
 fi
 check_and_install "node" "$node_version" "$NODE_VERSION" "curl $node_url --output node.tar.xz
 															&& tar -xf node.tar.xz
