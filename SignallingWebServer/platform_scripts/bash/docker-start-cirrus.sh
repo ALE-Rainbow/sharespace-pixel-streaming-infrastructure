@@ -28,4 +28,3 @@ else
 fi
 
 docker run --name cirrus_latest --network host --rm --entrypoint /usr/local/bin/node cirrus-webserver /SignallingWebServer/cirrus.js --peerConnectionOptions="${peerConnectionOptions}" --publicIp="${publicip}"
-

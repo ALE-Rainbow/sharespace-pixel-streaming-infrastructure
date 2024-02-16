@@ -1,6 +1,6 @@
 #!/bin/bash
 # Copyright Epic Games, Inc. All Rights Reserved.
-BASH_LOCATION=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+BASH_LOCATION="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
 
 pushd "${BASH_LOCATION}" > /dev/null
 
@@ -25,7 +25,12 @@ echo ""
 
 # Hmm, plain text
 realm="PixelStreaming"
-process="turnserver"
+process=""
+if [ "$(uname)" == "Darwin" ]; then
+	process="${BASH_LOCATION}/coturn/bin/turnserver"
+else
+	process="turnserver"
+fi
 arguments="-c turnserver.conf --allowed-peer-ip=$localip -p ${turnport} -r $realm -X $publicip -E $localip -L $localip --no-cli --no-tls --no-dtls --pidfile /var/run/turnserver.pid -f -a -v -u ${turnusername}:${turnpassword}"
 
 # Add arguments passed to script to arguments for executable

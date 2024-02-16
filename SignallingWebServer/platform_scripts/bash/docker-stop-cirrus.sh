@@ -9,4 +9,3 @@ if [ -z "$PSID" ]; then
 fi
 echo "Stopping stun server ..."
 docker stop cirrus_latest
-

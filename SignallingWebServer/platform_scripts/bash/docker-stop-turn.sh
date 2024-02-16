@@ -9,4 +9,3 @@ if [ -z "$PSID" ]; then
 fi
 echo "Stopping turn server..."
 docker stop coturn_latest
-

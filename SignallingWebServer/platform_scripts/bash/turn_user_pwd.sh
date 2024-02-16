@@ -4,4 +4,3 @@
 # Plain text TURN setup
 turnusername="PixelStreamingUser"
 turnpassword="AnotherTURNintheroad"
-
