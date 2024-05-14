@@ -596,6 +596,12 @@ function onStreamerMessageId(streamer, msg) {
 
 	let streamerId = msg.id;
 	registerStreamer(streamerId, streamer);
+
+	// Broadcast to all player the availability of a new streamer
+	const _msg = { type: 'streamerConnected', id: streamer.id };
+	for (let player of players.values()) {
+		player.sendTo(_msg);
+	}
 }
 
 function onStreamerMessagePing(streamer, msg) {

@@ -75,8 +75,8 @@ export class StreamController {
         }
         // video element has some other media stream that is not associated with this audio track
         else if (
-            videoElement.srcObject &&
-            videoElement.srcObject !== audioMediaStream
+            (videoElement.srcObject &&
+            videoElement.srcObject !== audioMediaStream) || !videoElement.srcObject
         ) {
             // create a new audio element
             this.audioElement.srcObject = audioMediaStream;

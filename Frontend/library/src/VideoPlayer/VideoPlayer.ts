@@ -34,6 +34,7 @@ export class VideoPlayer {
         this.videoElement = document.createElement('video');
         this.config = config;
         this.videoElement.id = 'streamingVideo';
+        this.videoElement.poster = './images/ShareSpace.png';
         this.videoElement.disablePictureInPicture = true;
         this.videoElement.playsInline = true;
         this.videoElement.style.width = '100%';
@@ -76,6 +77,13 @@ export class VideoPlayer {
 
     public setAudioElement(audioElement: HTMLAudioElement) : void {
         this.audioElement = audioElement;
+        this.audioElement.onloadedmetadata = () => {
+            setTimeout( () => {
+                this.onVideoInitialized();
+            }, 1000
+        );
+            
+        };
     }
 
     /**
@@ -104,8 +112,10 @@ export class VideoPlayer {
      */
     isVideoReady(): boolean {
         return (
-            this.videoElement.readyState !== undefined &&
-            this.videoElement.readyState > 0
+            (this.videoElement.readyState !== undefined &&
+            this.videoElement.readyState > 0) || 
+            (this.audioElement.readyState !== undefined &&
+                this.audioElement.readyState > 0)
         );
     }
 
@@ -114,8 +124,10 @@ export class VideoPlayer {
      */
     hasVideoSource(): boolean {
         return (
-            this.videoElement.srcObject !== undefined &&
-            this.videoElement.srcObject !== null
+            (this.videoElement.srcObject !== undefined &&
+            this.videoElement.srcObject !== null) ||
+            (this.audioElement.srcObject !== undefined &&
+                this.audioElement.srcObject !== null)
         );
     }
 

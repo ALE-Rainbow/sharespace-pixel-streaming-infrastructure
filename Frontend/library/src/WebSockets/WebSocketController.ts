@@ -218,6 +218,13 @@ export class WebSocketController {
     onStreamerList(messageStreamerList: MessageReceive.MessageStreamerList) {}
 
     /**
+     * The Message Contains the payload of the peer connection options used for the RTC Peer hand shake
+     * @param messageConfig - Config Message received from he signaling server
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
+    onStreamerConnected(messageStreamerConnected: MessageReceive.MessageStreamerConnected) {}
+
+    /**
      * @param iceCandidate - Ice Candidate sent from the Signaling server server's RTC hand shake
      */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function

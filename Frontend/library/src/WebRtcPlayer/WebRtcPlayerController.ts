@@ -6,7 +6,8 @@ import {
     MessageAnswer,
     MessageOffer,
     MessageConfig,
-    MessageStreamerList
+    MessageStreamerList,
+    MessageStreamerConnected
 } from '../WebSockets/MessageReceive';
 import { FreezeFrameController } from '../FreezeFrame/FreezeFrameController';
 import { AFKController } from '../AFK/AFKController';
@@ -1390,6 +1391,20 @@ export class WebRtcPlayerController {
                 wantedStreamerId
             })
         );
+    }
+
+    /**
+     * Handles when the signalling server gives us the list of streamer ids.
+     */
+    handleStreamerConnectedMessage(messageStreamerConnected: MessageStreamerConnected) {
+        Logger.Log(
+            Logger.GetStackTrace(),
+            `Got streamer connected ${messageStreamerConnected.id}`,
+            6
+        );
+
+        // To simplify request a new streamerlist in order to use the same flow
+        this.webSocketController.requestStreamerList();
     }
 
     /**
