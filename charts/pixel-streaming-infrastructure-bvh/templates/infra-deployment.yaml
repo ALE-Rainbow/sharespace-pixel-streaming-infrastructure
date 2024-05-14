@@ -33,9 +33,7 @@ spec:
           {{- if .Values.infra.peerConnectionOptions }}
           command: 
             - /usr/local/bin/node
-          args: 
-            - /SignallingWebServer/cirrus.js
-            - --peerConnectionOptions='{{ .Values.infra.peerConnectionOptions | toJson  }}'
+          args: [ "/SignallingWebServer/cirrus.js", "--peerConnectionOptions={{ .Values.infra.peerConnectionOptions | toJson }}" ]
           {{- end }}
           ports:
             - name: http
