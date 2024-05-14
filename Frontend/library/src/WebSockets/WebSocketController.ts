@@ -134,7 +134,6 @@ export class WebSocketController {
      * @param event - Close Event
      */
     handleOnClose(event: CloseEvent) {
-        this.onWebSocketOncloseOverlayMessage(event);
         Logger.Log(
             Logger.GetStackTrace(),
             'Disconnected to the signalling server via WebSocket: ' +
@@ -142,7 +141,7 @@ export class WebSocketController {
                 ' - ' +
                 event.reason
         );
-        this.onClose.dispatchEvent(new Event('close'));
+        this.onClose.dispatchEvent(new CustomEvent('close', { 'detail': event }));
     }
 
     requestStreamerList() {
@@ -204,10 +203,6 @@ export class WebSocketController {
         this.webSocket?.close();
     }
 
-    /** Event used for Displaying websocket closed messages */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
-    onWebSocketOncloseOverlayMessage(event: CloseEvent) {}
-
     /**
      * The Message Contains the payload of the peer connection options used for the RTC Peer hand shake
      * @param messageConfig - Config Message received from he signaling server
@@ -221,6 +216,13 @@ export class WebSocketController {
      */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
     onStreamerList(messageStreamerList: MessageReceive.MessageStreamerList) {}
+
+    /**
+     * The Message Contains the payload of the peer connection options used for the RTC Peer hand shake
+     * @param messageConfig - Config Message received from he signaling server
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
+    onStreamerConnected(messageStreamerConnected: MessageReceive.MessageStreamerConnected) {}
 
     /**
      * @param iceCandidate - Ice Candidate sent from the Signaling server server's RTC hand shake

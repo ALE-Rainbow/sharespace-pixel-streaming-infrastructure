@@ -10,7 +10,8 @@ import {
     MessageAnswer,
     MessageOffer,
     MessageIceCandidate,
-    MessagePeerDataChannels
+    MessagePeerDataChannels,
+    MessageStreamerConnected
 } from './MessageReceive';
 import { MessagePong } from './MessageSend';
 
@@ -89,6 +90,20 @@ export class SignallingProtocol {
                 const streamerList: MessageStreamerList =
                     JSON.parse(listPayload);
                 websocketController.onStreamerList(streamerList);
+            }
+        );
+
+        websocketController.signallingProtocol.addMessageHandler(
+            MessageRecvTypes.STREAMER_CONNECTED,
+            (streamerPayload: string) => {
+                Logger.Log(
+                    Logger.GetStackTrace(),
+                    MessageRecvTypes.STREAMER_CONNECTED,
+                    6
+                );
+                const streamerConnected: MessageStreamerConnected =
+                    JSON.parse(streamerPayload);
+                websocketController.onStreamerConnected(streamerConnected);
             }
         );
 

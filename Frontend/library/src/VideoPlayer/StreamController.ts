@@ -18,6 +18,7 @@ export class StreamController {
     constructor(videoElementProvider: VideoPlayer) {
         this.videoElementProvider = videoElementProvider;
         this.audioElement = document.createElement('Audio') as HTMLAudioElement;
+        this.videoElementProvider.setAudioElement(this.audioElement);
     }
 
     /**
@@ -74,8 +75,8 @@ export class StreamController {
         }
         // video element has some other media stream that is not associated with this audio track
         else if (
-            videoElement.srcObject &&
-            videoElement.srcObject !== audioMediaStream
+            (videoElement.srcObject &&
+            videoElement.srcObject !== audioMediaStream) || !videoElement.srcObject
         ) {
             // create a new audio element
             this.audioElement.srcObject = audioMediaStream;

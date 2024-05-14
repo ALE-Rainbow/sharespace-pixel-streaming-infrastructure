@@ -18,6 +18,7 @@ declare global {
 export class VideoPlayer {
     private config: Config;
     private videoElement: HTMLVideoElement;
+    private audioElement?: HTMLAudioElement;
     private orientationChangeTimeout: number;
     private lastTimeResized = new Date().getTime();
 
@@ -33,6 +34,7 @@ export class VideoPlayer {
         this.videoElement = document.createElement('video');
         this.config = config;
         this.videoElement.id = 'streamingVideo';
+        this.videoElement.poster = './images/ShareSpace.png';
         this.videoElement.disablePictureInPicture = true;
         this.videoElement.playsInline = true;
         this.videoElement.style.width = '100%';
@@ -52,8 +54,11 @@ export class VideoPlayer {
             );
         };
 
-        // set play for video
+        // set play for video (and audio)
         this.videoElement.onclick = () => {
+            if (this.audioElement != undefined && this.audioElement.paused) {
+                this.audioElement.play();
+            }
             if (this.videoElement.paused) {
                 this.videoElement.play();
             }
@@ -68,6 +73,17 @@ export class VideoPlayer {
         window.addEventListener('orientationchange', () =>
             this.onOrientationChange()
         );
+    }
+
+    public setAudioElement(audioElement: HTMLAudioElement) : void {
+        this.audioElement = audioElement;
+        this.audioElement.onloadedmetadata = () => {
+            setTimeout( () => {
+                this.onVideoInitialized();
+            }, 1000
+        );
+            
+        };
     }
 
     /**
@@ -96,8 +112,10 @@ export class VideoPlayer {
      */
     isVideoReady(): boolean {
         return (
-            this.videoElement.readyState !== undefined &&
-            this.videoElement.readyState > 0
+            (this.videoElement.readyState !== undefined &&
+            this.videoElement.readyState > 0) || 
+            (this.audioElement.readyState !== undefined &&
+                this.audioElement.readyState > 0)
         );
     }
 
@@ -106,8 +124,10 @@ export class VideoPlayer {
      */
     hasVideoSource(): boolean {
         return (
-            this.videoElement.srcObject !== undefined &&
-            this.videoElement.srcObject !== null
+            (this.videoElement.srcObject !== undefined &&
+            this.videoElement.srcObject !== null) ||
+            (this.audioElement.srcObject !== undefined &&
+                this.audioElement.srcObject !== null)
         );
     }
 

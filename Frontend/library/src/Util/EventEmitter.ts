@@ -12,6 +12,10 @@ import { SettingFlag } from '../Config/SettingFlag';
 import { SettingNumber } from '../Config/SettingNumber';
 import { SettingText } from '../Config/SettingText';
 import { SettingOption } from '../Config/SettingOption';
+import {
+    DataChannelLatencyTestResponse,
+    DataChannelLatencyTestResult
+} from "../DataChannel/DataChannelLatencyTestResults";
 
 /**
  * An event that is emitted when AFK disconnect is about to happen.
@@ -140,7 +144,7 @@ export class WebRtcDisconnectedEvent extends Event {
         /** Message describing the disconnect reason */
         eventString: string;
         /** true if the user is able to reconnect, false if disconnected because of unrecoverable reasons like not able to connect to the signaling server */
-        showActionOrErrorOnDisconnect: boolean;
+        allowClickToReconnect: boolean;
     };
     constructor(data: WebRtcDisconnectedEvent['data']) {
         super('webRtcDisconnected');
@@ -343,7 +347,9 @@ export class StreamerListMessageEvent extends Event {
         /** Streamer list message containing an array of streamer ids */
         messageStreamerList: MessageStreamerList;
         /** Auto-selected streamer from the list, or null if unable to auto-select and user should be prompted to select */
-        autoSelectedStreamerId: string | null;
+        autoSelectedStreamerId: string;
+        /** Wanted streamer id from various configurations. */
+        wantedStreamerId: string;
     };
     constructor(data: StreamerListMessageEvent['data']) {
         super('streamerListMessage');
@@ -362,6 +368,37 @@ export class LatencyTestResultEvent extends Event {
     };
     constructor(data: LatencyTestResultEvent['data']) {
         super('latencyTestResult');
+        this.data = data;
+    }
+}
+
+/**
+ * An event that is emitted when receiving data channel latency test response from server.
+ * This event is handled by DataChannelLatencyTestController
+ */
+export class DataChannelLatencyTestResponseEvent extends Event {
+    readonly type: 'dataChannelLatencyTestResponse';
+    readonly data: {
+        /** Latency test result object */
+        response: DataChannelLatencyTestResponse
+    };
+    constructor(data: DataChannelLatencyTestResponseEvent['data']) {
+        super('dataChannelLatencyTestResponse');
+        this.data = data;
+    }
+}
+
+/**
+ * An event that is emitted when data channel latency test results are ready.
+ */
+export class DataChannelLatencyTestResultEvent extends Event {
+    readonly type: 'dataChannelLatencyTestResult';
+    readonly data: {
+        /** Latency test result object */
+        result: DataChannelLatencyTestResult
+    };
+    constructor(data: DataChannelLatencyTestResultEvent['data']) {
+        super('dataChannelLatencyTestResult');
         this.data = data;
     }
 }
@@ -513,6 +550,8 @@ export type PixelStreamingEvent =
     | StatsReceivedEvent
     | StreamerListMessageEvent
     | LatencyTestResultEvent
+    | DataChannelLatencyTestResponseEvent
+    | DataChannelLatencyTestResultEvent
     | InitialSettingsEvent
     | SettingsChangedEvent
     | XrSessionStartedEvent

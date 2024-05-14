@@ -17,7 +17,7 @@ import {
     SettingOption,
     Logger,
     SettingBase
-} from '@epicgames-ps/lib-pixelstreamingfrontend-ue5.2';
+} from '@epicgames-ps/lib-pixelstreamingfrontend-ue5.3';
 import { SettingUIFlag } from './SettingUIFlag';
 import { SettingUINumber } from './SettingUINumber';
 import { SettingUIText } from './SettingUIText';
@@ -176,10 +176,6 @@ export class ConfigUI {
         );
         this.addSettingFlag(
             psSettingsSection,
-            this.flagsUi.get(Flags.PreferSFU)
-        );
-        this.addSettingFlag(
-            psSettingsSection,
             this.flagsUi.get(Flags.IsQualityController)
         );
         this.addSettingFlag(
@@ -198,6 +194,10 @@ export class ConfigUI {
             psSettingsSection,
             this.flagsUi.get(Flags.AFKDetection)
         );
+        this.addSettingFlag(
+            psSettingsSection,
+            this.flagsUi.get(Flags.WaitForStreamer)
+        );
         this.addSettingNumeric(
             psSettingsSection,
             this.numericParametersUi.get(NumericParameters.AFKTimeoutSecs)
@@ -205,6 +205,10 @@ export class ConfigUI {
         this.addSettingNumeric(
             psSettingsSection,
             this.numericParametersUi.get(NumericParameters.MaxReconnectAttempts)
+        );
+        this.addSettingNumeric(
+            psSettingsSection,
+            this.numericParametersUi.get(NumericParameters.StreamerAutoJoinInterval)
         );
 
         /* Setup all view/ui related settings under this section */
