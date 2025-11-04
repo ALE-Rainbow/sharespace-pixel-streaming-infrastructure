@@ -118,20 +118,53 @@ function setup_frontend() {
 	popd > /dev/null # root
 }
 
+function get_node_architecture() {
+	local arch=$(uname -m)
+	case $arch in
+		x86_64)
+			echo "x64"
+			;;
+		aarch64|arm64)
+			echo "arm64"
+			;;
+		armv7l)
+			echo "armv7l"
+			;;
+		*)
+			echo "unsupported"
+			;;
+	esac
+}
 
 echo "Checking Pixel Streaming Server dependencies."
 
 # navigate to SignallingWebServer root
 pushd ${BASH_LOCATION}/../.. > /dev/null
 
+# Detect platform architecture
+NODE_ARCH=$(get_node_architecture)
+NODE_VERSION="v18.17.0"
+
+if [ "$NODE_ARCH" = "unsupported" ]; then
+	echo "Error: Unsupported architecture $(uname -m)"
+	echo "Supported architectures: x86_64 (amd64), aarch64/arm64, armv7l"
+	exit 1
+fi
+
+echo "Detected architecture: $NODE_ARCH"
+
 node_version=""
 if [[ -f "${BASH_LOCATION}/node/bin/node" ]]; then
 	node_version=$("${BASH_LOCATION}/node/bin/node" --version)
 fi
-check_and_install "node" "$node_version" "v18.17.0" "curl https://nodejs.org/dist/v18.17.0/node-v18.17.0-linux-x64.tar.gz --output node.tar.xz
-													&& tar -xf node.tar.xz
-													&& rm node.tar.xz
-													&& mv node-v*-linux-x64 \"${BASH_LOCATION}/node\""
+
+# Build the Node.js download URL based on architecture
+NODE_DOWNLOAD_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-${NODE_ARCH}.tar.gz"
+
+check_and_install "node" "$node_version" "$NODE_VERSION" "curl ${NODE_DOWNLOAD_URL} --output node.tar.gz
+													&& tar -xf node.tar.gz
+													&& rm node.tar.gz
+													&& mv node-${NODE_VERSION}-linux-${NODE_ARCH} \"${BASH_LOCATION}/node\""
 
 PATH="${BASH_LOCATION}/node/bin:$PATH"
 "${BASH_LOCATION}/node/lib/node_modules/npm/bin/npm-cli.js" install
